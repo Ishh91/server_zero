@@ -35,7 +35,8 @@ const allowedOrigins = [
   process.env.CORS_ORIGIN,
   'http://localhost:3000',
   'http://localhost:3001',
-  'https://server-zero.onrender.com'
+  'https://server-zero.onrender.com',
+  'https://zerotushar.netlify.app'
 ].filter(Boolean);
 
 app.use(cors({
