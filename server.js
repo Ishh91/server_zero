@@ -14,6 +14,7 @@ const portfolioRoutes = require('./routes/portfolioRoutes');
 const inquiryRoutes = require('./routes/inquiryRoutes');
 const testimonialRoutes = require('./routes/testimonialRoutes');
 const authRoutes = require('./routes/authRoutes');
+const personalBrandingRoutes = require('./routes/personalBrandingRoutes');
 
 const blogRoutes = require('./routes/blogRoutes');
 const mediaRoutes = require('./routes/mediaRoutes');
@@ -82,6 +83,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/blogs', blogRoutes);
 app.use('/api/media', mediaRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/personal-branding', personalBrandingRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {

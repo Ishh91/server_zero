@@ -42,10 +42,12 @@ const uploadPortfolioMedia = upload.fields([
   { name: 'thumbnail', maxCount: 1 }
 ]);
 const uploadMediaFile = upload.single('image');
+const uploadPersonalBrandingAvatar = upload.single('avatar');
 
 module.exports = { 
   upload, 
   uploadTeamImage, 
   uploadPortfolioMedia,
-  uploadMediaFile 
+  uploadMediaFile,
+  uploadPersonalBrandingAvatar
 };
