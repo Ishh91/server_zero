@@ -2,6 +2,23 @@ const PersonalBranding = require('../models/PersonalBranding');
 const cloudinary = require('../config/cloudinary');
 const fs = require('fs');
 
+// Helper function to map data to stats if needed
+const mapDataToStats = (item) => {
+  const itemObj = item.toObject ? item.toObject() : item;
+  // If stats is empty or not present, use data (map metric to label)
+  if ((!itemObj.stats || itemObj.stats.length === 0) && itemObj.data && itemObj.data.length > 0) {
+    return {
+      ...itemObj,
+      stats: itemObj.data.map(d => ({
+        label: d.metric,
+        value: d.value,
+        icon: d.icon
+      }))
+    };
+  }
+  return itemObj;
+};
+
 // @desc    Get all personal branding entries
 // @route   GET /api/personal-branding
 // @access  Public
@@ -10,10 +27,13 @@ exports.getAllPersonalBranding = async (req, res, next) => {
     const personalBrandings = await PersonalBranding.find({ isActive: true })
       .sort({ order: 1, createdAt: -1 });
 
+    // Map data to stats for each entry for frontend compatibility
+    const mappedPersonalBrandings = personalBrandings.map(mapDataToStats);
+
     res.status(200).json({
       success: true,
-      count: personalBrandings.length,
-      data: personalBrandings,
+      count: mappedPersonalBrandings.length,
+      data: mappedPersonalBrandings,
     });
   } catch (error) {
     next(error);
@@ -34,9 +54,12 @@ exports.getPersonalBranding = async (req, res, next) => {
       });
     }
 
+    // Map data to stats for frontend compatibility
+    const mappedPersonalBranding = mapDataToStats(personalBranding);
+
     res.status(200).json({
       success: true,
-      data: personalBranding,
+      data: mappedPersonalBranding,
     });
   } catch (error) {
     next(error);

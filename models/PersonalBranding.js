@@ -38,8 +38,14 @@ const personalBrandingSchema = new mongoose.Schema({
     imageUrl: String,
     imagePublicId: String,
   }],
+  // Keep data for backwards compatibility and add stats for frontend
   data: [{
     metric: String,
+    value: String,
+    icon: String,
+  }],
+  stats: [{
+    label: String,
     value: String,
     icon: String,
   }],
@@ -57,6 +63,10 @@ const personalBrandingSchema = new mongoose.Schema({
   isActive: {
     type: Boolean,
     default: true,
+  },
+  caseStudy: {
+    type: Boolean,
+    default: false,
   },
 }, {
   timestamps: true,
