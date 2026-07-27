@@ -21,6 +21,7 @@ const adminRoutes = require('./routes/adminRoutes');
 const personalBrandingRoutes = require('./routes/personalBrandingRoutes');
 const siteSettingsRoutes = require('./routes/siteSettingsRoutes');
 const galleryVideoRoutes = require('./routes/galleryVideoRoutes');
+const caseStudyRoutes = require('./routes/caseStudyRoutes');
 
 // Import middleware
 const { errorHandler } = require('./middleware/errorMiddleware');
@@ -92,6 +93,7 @@ app.use('/api/admin', adminRoutes);
 app.use('/api/personal-branding', personalBrandingRoutes);
 app.use('/api/site-settings', siteSettingsRoutes);
 app.use('/api/gallery-videos', galleryVideoRoutes);
+app.use('/api/case-studies', caseStudyRoutes);
 
 // Root welcome route
 app.get('/', (req, res) => {

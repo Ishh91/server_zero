@@ -8,6 +8,9 @@ const Media = require('../models/Media');
 const TeamMember = require('../models/TeamMember');
 const Portfolio = require('../models/Portfolio');
 const PersonalBranding = require('../models/PersonalBranding');
+const GalleryVideo = require('../models/GalleryVideo');
+const CaseStudy = require('../models/CaseStudy');
+const Testimonial = require('../models/Testimonial');
 
 // Dashboard stats
 router.get('/stats', protect, admin, async (req, res) => {
@@ -19,6 +22,9 @@ router.get('/stats', protect, admin, async (req, res) => {
     const totalTeam = await TeamMember.countDocuments();
     const totalPortfolio = await Portfolio.countDocuments();
     const totalPersonalBranding = await PersonalBranding.countDocuments();
+    const totalGalleryVideos = await GalleryVideo.countDocuments();
+    const totalCaseStudies = await CaseStudy.countDocuments();
+    const totalTestimonials = await Testimonial.countDocuments();
     
     res.json({
       success: true,
@@ -30,6 +36,9 @@ router.get('/stats', protect, admin, async (req, res) => {
         totalTeam,
         totalPortfolio,
         totalPersonalBranding,
+        totalGalleryVideos,
+        totalCaseStudies,
+        totalTestimonials,
       }
     });
   } catch (error) {

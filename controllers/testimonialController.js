@@ -2,7 +2,9 @@ const Testimonial = require('../models/Testimonial');
 
 const getTestimonials = async (req, res) => {
   try {
-    const testimonials = await Testimonial.find({ isActive: true })
+    const isAdmin = req.query.all === 'true';
+    const filter = isAdmin ? {} : { isActive: true };
+    const testimonials = await Testimonial.find(filter)
       .sort('-createdAt')
       .select('-__v');
     res.json({
@@ -24,6 +26,22 @@ const createTestimonial = async (req, res) => {
   }
 };
 
+const updateTestimonial = async (req, res) => {
+  try {
+    const testimonial = await Testimonial.findByIdAndUpdate(
+      req.params.id,
+      req.body,
+      { new: true, runValidators: true }
+    );
+    if (!testimonial) {
+      return res.status(404).json({ success: false, message: 'Testimonial not found' });
+    }
+    res.json({ success: true, data: testimonial });
+  } catch (error) {
+    res.status(400).json({ success: false, message: error.message });
+  }
+};
+
 const deleteTestimonial = async (req, res) => {
   try {
     const testimonial = await Testimonial.findById(req.params.id);
@@ -40,5 +58,6 @@ const deleteTestimonial = async (req, res) => {
 module.exports = {
   getTestimonials,
   createTestimonial,
+  updateTestimonial,
   deleteTestimonial,
 };
