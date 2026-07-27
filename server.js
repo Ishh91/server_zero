@@ -90,6 +90,30 @@ app.use('/api/personal-branding', personalBrandingRoutes);
 app.use('/api/site-settings', siteSettingsRoutes);
 app.use('/api/gallery-videos', galleryVideoRoutes);
 
+// Root welcome route
+app.get('/', (req, res) => {
+  res.status(200).json({
+    success: true,
+    message: 'ZERO BY CINEVIV API Server',
+    description: 'Content-Led Marketing Agency Backend API',
+    endpoints: {
+      health: '/api/health',
+      auth: '/api/auth/*',
+      portfolio: '/api/portfolio',
+      team: '/api/team',
+      testimonials: '/api/testimonials',
+      inquiries: '/api/inquiries',
+      blogs: '/api/blogs',
+      media: '/api/media',
+      personalBranding: '/api/personal-branding',
+      siteSettings: '/api/site-settings',
+      galleryVideos: '/api/gallery-videos',
+      admin: '/api/admin/*',
+    },
+    timestamp: new Date().toISOString(),
+  });
+});
+
 // Health check
 app.get('/api/health', (req, res) => {
   res.status(200).json({
