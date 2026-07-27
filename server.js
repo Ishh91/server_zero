@@ -36,17 +36,20 @@ app.use(compression());
 // CORS configuration
 const allowedOrigins = [
   process.env.CORS_ORIGIN,
+  process.env.FRONTEND_URL,
   'http://localhost:3000',
   'http://localhost:3001',
   'https://server-zero.onrender.com',
   'https://zerotushar.netlify.app',
   'http://zerobycineviv.com',
-  'https://zerobycineviv.com'
+  'https://zerobycineviv.com',
+  'http://shiny-phoenix-353228.netlify.app',
+  'https://shiny-phoenix-353228.netlify.app',
 ].filter(Boolean);
 
 app.use(cors({
   origin: (origin, callback) => {
-    if (!origin || allowedOrigins.includes(origin) || origin.includes('localhost')) {
+    if (!origin || allowedOrigins.includes(origin) || origin.includes('localhost') || origin.endsWith('.netlify.app')) {
       callback(null, true);
     } else {
       callback(new Error('Not allowed by CORS'));
