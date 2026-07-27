@@ -30,8 +30,38 @@ const app = express();
 
 // Security middleware
 app.use(helmet({
-  crossOriginResourcePolicy: { policy: "cross-origin" }
+  crossOriginResourcePolicy: { policy: "cross-origin" },
+  crossOriginEmbedderPolicy: false,
+  contentSecurityPolicy: {
+    useDefaults: false,
+    directives: {
+      defaultSrc: ["'self'"],
+      imgSrc: ["'self'", "data:", "blob:", "https:", "http:"],
+      mediaSrc: ["'self'", "blob:", "data:", "https:", "http:"],
+      scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'", "https://cdn.jsdelivr.net"],
+      styleSrc: ["'self'", "'unsafe-inline'", "https://cdn.jsdelivr.net", "https://fonts.googleapis.com"],
+      fontSrc: ["'self'", "data:", "https://fonts.gstatic.com"],
+      connectSrc: ["'self'", "https:", "http:", "wss:", "ws:"],
+      frameSrc: ["'self'", "https:", "http:"],
+      objectSrc: ["'none'"],
+      baseUri: ["'self'"]
+    }
+  }
 }));
+
+// Prevent ERR_CACHE_OPERATION_NOT_SUPPORTED on video byte-range requests
+app.use((req, res, next) => {
+  const isVideo = /\.(mp4|webm|ogv|mov)(\?|#|$)/i.test(req.url);
+  if (isVideo) {
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+    res.setHeader('Pragma', 'no-cache');
+    res.setHeader('Expires', '0');
+    res.setHeader('Surrogate-Control', 'no-store');
+    res.setHeader('Accept-Ranges', 'bytes');
+    res.setHeader('X-Accel-Buffering', 'no');
+  }
+  next();
+});
 app.use(compression());
 
 // CORS configuration
