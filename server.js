@@ -62,7 +62,22 @@ app.use((req, res, next) => {
   }
   next();
 });
+
 app.use(compression());
+
+// Cache headers for public read-only GET endpoints (2 mins browser/CDN cache)
+app.use((req, res, next) => {
+  if (
+    req.method === 'GET' &&
+    req.url.startsWith('/api/') &&
+    !req.url.startsWith('/api/admin') &&
+    !req.url.startsWith('/api/auth') &&
+    !req.url.startsWith('/api/inquiries')
+  ) {
+    res.setHeader('Cache-Control', 'public, max-age=120, stale-while-revalidate=300');
+  }
+  next();
+});
 
 // CORS configuration
 const allowedOrigins = [
@@ -80,7 +95,17 @@ const allowedOrigins = [
 
 app.use(cors({
   origin: (origin, callback) => {
-    if (!origin || allowedOrigins.includes(origin) || origin.includes('localhost') || origin.endsWith('.netlify.app')) {
+    if (
+      !origin ||
+      allowedOrigins.includes(origin) ||
+      origin.includes('localhost') ||
+      origin.includes('127.0.0.1') ||
+      origin.includes('192.168.') ||
+      origin.includes('10.') ||
+      origin.includes('172.') ||
+      origin.endsWith('.netlify.app') ||
+      origin.includes('zerobycineviv.com')
+    ) {
       callback(null, true);
     } else {
       callback(new Error('Not allowed by CORS'));

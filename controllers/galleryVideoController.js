@@ -40,13 +40,30 @@ exports.createGalleryVideo = async (req, res, next) => {
     }
 
     if (req.file) {
-      const result = await cloudinary.uploader.upload(req.file.path, {
-        folder: 'zero-cineviv/gallery-videos',
-        resource_type: 'video',
+      try {
+        const result = await cloudinary.uploader.upload(req.file.path, {
+          folder: 'zero-cineviv/gallery-videos',
+          resource_type: 'video',
+          chunk_size: 6000000,
+        });
+        try { fs.unlinkSync(req.file.path); } catch (_) { /* ignore */ }
+        videoData.videoUrl = result.secure_url;
+        videoData.videoPublicId = result.public_id;
+      } catch (cloudinaryErr) {
+        try { fs.unlinkSync(req.file.path); } catch (_) { /* ignore */ }
+        console.error('[GalleryVideo] Cloudinary upload failed:', cloudinaryErr);
+        return res.status(400).json({
+          success: false,
+          message: cloudinaryErr?.message || 'Cloudinary upload failed — video may be too large or invalid. Try the video URL field instead or check API credentials.'
+        });
+      }
+    }
+
+    if (!videoData.videoUrl || !String(videoData.videoUrl).trim()) {
+      return res.status(400).json({
+        success: false,
+        message: 'Video is required. Either upload a video file, or paste a hosted video URL (Cloudinary / direct .mp4 link).'
       });
-      fs.unlinkSync(req.file.path);
-      videoData.videoUrl = result.secure_url;
-      videoData.videoPublicId = result.public_id;
     }
 
     const video = await GalleryVideo.create(videoData);
@@ -55,6 +72,14 @@ exports.createGalleryVideo = async (req, res, next) => {
       data: video,
     });
   } catch (error) {
+    console.error('[GalleryVideo] create failed:', error);
+    if (error && error.name === 'ValidationError') {
+      const firstMsg = Object.values(error.errors || {}).map(e => e.message).join('; ');
+      return res.status(400).json({
+        success: false,
+        message: firstMsg || error.message || 'Validation error'
+      });
+    }
     next(error);
   }
 };
@@ -79,16 +104,38 @@ exports.updateGalleryVideo = async (req, res, next) => {
     }
 
     if (req.file) {
-      if (video.videoPublicId) {
-        await cloudinary.uploader.destroy(video.videoPublicId, { resource_type: 'video' });
+      try {
+        if (video.videoPublicId) {
+          try {
+            await cloudinary.uploader.destroy(video.videoPublicId, { resource_type: 'video' });
+          } catch (_) { /* ignore destroy errors */ }
+        }
+        const result = await cloudinary.uploader.upload(req.file.path, {
+          folder: 'zero-cineviv/gallery-videos',
+          resource_type: 'video',
+          chunk_size: 6000000,
+        });
+        try { fs.unlinkSync(req.file.path); } catch (_) { /* ignore */ }
+        updateData.videoUrl = result.secure_url;
+        updateData.videoPublicId = result.public_id;
+      } catch (cloudinaryErr) {
+        try { fs.unlinkSync(req.file.path); } catch (_) { /* ignore */ }
+        console.error('[GalleryVideo] Cloudinary re-upload failed on update:', cloudinaryErr);
+        return res.status(400).json({
+          success: false,
+          message: cloudinaryErr?.message || 'Cloudinary upload failed — try the video URL field instead or check API credentials.'
+        });
       }
-      const result = await cloudinary.uploader.upload(req.file.path, {
-        folder: 'zero-cineviv/gallery-videos',
-        resource_type: 'video',
+    }
+
+    const hasExplicitVideoUrl = updateData.videoUrl && String(updateData.videoUrl).trim();
+    const keepsExisting = !hasExplicitVideoUrl && video.videoUrl;
+
+    if (!hasExplicitVideoUrl && !keepsExisting) {
+      return res.status(400).json({
+        success: false,
+        message: 'Video is required. Either upload a new video file, or keep/paste a valid video URL (Cloudinary / direct .mp4 link).'
       });
-      fs.unlinkSync(req.file.path);
-      updateData.videoUrl = result.secure_url;
-      updateData.videoPublicId = result.public_id;
     }
 
     const updated = await GalleryVideo.findByIdAndUpdate(req.params.id, updateData, {
@@ -101,6 +148,17 @@ exports.updateGalleryVideo = async (req, res, next) => {
       data: updated,
     });
   } catch (error) {
+    console.error('[GalleryVideo] update failed:', error);
+    if (error && error.name === 'ValidationError') {
+      const firstMsg = Object.values(error.errors || {}).map(e => e.message).join('; ');
+      return res.status(400).json({
+        success: false,
+        message: firstMsg || error.message || 'Validation error'
+      });
+    }
+    if (error && error.kind === 'ObjectId') {
+      return res.status(404).json({ success: false, message: 'Gallery video not found' });
+    }
     next(error);
   }
 };
