@@ -104,12 +104,27 @@ app.use(cors({
       return callback(null, true);
     }
 
-    // Allow local development hostnames in development mode only
-    if (process.env.NODE_ENV !== 'production') {
-      const isLocalDev = /^https?:\/\/(localhost|127\.0\.0\.1|192\.168\.\d+\.\d+|10\.\d+\.\d+\.\d+|172\.(1[6-9]|2\d|3[01])\.\d+\.\d+)(:\d+)?$/.test(origin);
-      if (isLocalDev) {
+    try {
+      const url = new URL(origin);
+      const hostname = url.hostname;
+      // Allow any netlify, vercel, render subdomain or zerobycineviv domain
+      if (
+        hostname.endsWith('.netlify.app') ||
+        hostname.endsWith('.vercel.app') ||
+        hostname.endsWith('.onrender.com') ||
+        hostname === 'zerobycineviv.com' ||
+        hostname.endsWith('.zerobycineviv.com')
+      ) {
         return callback(null, true);
       }
+    } catch (e) {
+      // Invalid URL format
+    }
+
+    // Allow local development hostnames in development mode
+    const isLocalDev = /^https?:\/\/(localhost|127\.0\.0\.1|192\.168\.\d+\.\d+|10\.\d+\.\d+\.\d+|172\.(1[6-9]|2\d|3[01])\.\d+\.\d+)(:\d+)?$/.test(origin);
+    if (isLocalDev) {
+      return callback(null, true);
     }
 
     return callback(new Error(`CORS blocked for origin: ${origin}`));
