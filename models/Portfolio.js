@@ -51,4 +51,7 @@ const portfolioSchema = new mongoose.Schema({
   timestamps: true,
 });
 
+portfolioSchema.index({ isActive: 1, category: 1, order: 1 });
+portfolioSchema.index({ featured: 1, isActive: 1 });
+
 module.exports = mongoose.model('Portfolio', portfolioSchema);

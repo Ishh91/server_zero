@@ -74,4 +74,8 @@ blogSchema.pre('validate', function(next) {
   next();
 });
 
+blogSchema.index({ published: 1, publishedAt: -1 });
+blogSchema.index({ category: 1, published: 1, publishedAt: -1 });
+blogSchema.index({ featured: 1, published: 1, publishedAt: -1 });
+
 module.exports = mongoose.model('Blog', blogSchema);

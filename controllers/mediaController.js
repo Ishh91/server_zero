@@ -3,29 +3,20 @@ const cloudinary = require('../config/cloudinary');
 const fs = require('fs');
 
 const uploadMedia = async (req, res) => {
+  const filePath = req.file ? req.file.path : null;
+
   try {
-    console.log('Media upload request received');
-    console.log('req.file:', req.file);
-    console.log('req.body:', req.body);
-    
     if (!req.file) {
-      console.log('No file in request');
       return res.status(400).json({ success: false, message: 'No file uploaded' });
     }
     
     // Upload to Cloudinary
     const resourceType = req.file.mimetype.startsWith('video/') ? 'video' : 'image';
-    console.log('Uploading to Cloudinary, resource type:', resourceType);
     
     const result = await cloudinary.uploader.upload(req.file.path, {
       folder: 'zero-cineviv/media',
       resource_type: resourceType,
     });
-    
-    console.log('Cloudinary upload successful:', result.public_id);
-    
-    // Delete local file
-    fs.unlinkSync(req.file.path);
     
     const media = await Media.create({
       filename: result.public_id.split('/').pop(),
@@ -36,13 +27,21 @@ const uploadMedia = async (req, res) => {
       mimeType: req.file.mimetype,
       size: req.file.size,
       alt: req.body.alt || '',
-      uploadedBy: req.user.id,
+      uploadedBy: req.user ? (req.user._id || req.user.id) : null,
     });
     
     res.status(201).json({ success: true, data: media });
   } catch (error) {
     console.error('Media upload error:', error);
-    res.status(400).json({ success: false, message: error.message, stack: error.stack });
+    res.status(400).json({ success: false, message: error.message || 'Media upload failed' });
+  } finally {
+    if (filePath && fs.existsSync(filePath)) {
+      try {
+        fs.unlinkSync(filePath);
+      } catch (unlinkErr) {
+        console.error('Error cleaning up local file:', unlinkErr);
+      }
+    }
   }
 };
 

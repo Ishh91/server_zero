@@ -80,36 +80,39 @@ app.use((req, res, next) => {
 });
 
 // CORS configuration
-const allowedOrigins = [
+const rawOrigins = [
   process.env.CORS_ORIGIN,
-  process.env.FRONTEND_URL,
+  ...(process.env.FRONTEND_URL ? process.env.FRONTEND_URL.split('||').map(s => s.trim()) : []),
   'http://localhost:3000',
   'http://localhost:3001',
-  'https://server-zero.onrender.com',
+  'http://localhost:5173',
   'https://zerotushar.netlify.app',
-  'http://zerobycineviv.com',
   'https://zerobycineviv.com',
-  'http://shiny-phoenix-353228.netlify.app',
+  'http://zerobycineviv.com',
   'https://shiny-phoenix-353228.netlify.app',
+  'https://server-zero.onrender.com'
 ].filter(Boolean);
+
+const allowedOrigins = [...new Set(rawOrigins)];
 
 app.use(cors({
   origin: (origin, callback) => {
-    if (
-      !origin ||
-      allowedOrigins.includes(origin) ||
-      origin.includes('localhost') ||
-      origin.includes('127.0.0.1') ||
-      origin.includes('192.168.') ||
-      origin.includes('10.') ||
-      origin.includes('172.') ||
-      origin.endsWith('.netlify.app') ||
-      origin.includes('zerobycineviv.com')
-    ) {
-      callback(null, true);
-    } else {
-      callback(new Error('Not allowed by CORS'));
+    // Allow requests with no origin (e.g. mobile apps, curl, server-to-server)
+    if (!origin) return callback(null, true);
+
+    if (allowedOrigins.includes(origin)) {
+      return callback(null, true);
     }
+
+    // Allow local development hostnames in development mode only
+    if (process.env.NODE_ENV !== 'production') {
+      const isLocalDev = /^https?:\/\/(localhost|127\.0\.0\.1|192\.168\.\d+\.\d+|10\.\d+\.\d+\.\d+|172\.(1[6-9]|2\d|3[01])\.\d+\.\d+)(:\d+)?$/.test(origin);
+      if (isLocalDev) {
+        return callback(null, true);
+      }
+    }
+
+    return callback(new Error(`CORS blocked for origin: ${origin}`));
   },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
@@ -118,8 +121,8 @@ app.use(cors({
 
 // Rate limiting
 const limiter = rateLimit({
-  windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS),
-  max: parseInt(process.env.RATE_LIMIT_MAX),
+  windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS, 10) || 15 * 60 * 1000,
+  max: parseInt(process.env.RATE_LIMIT_MAX, 10) || 150,
   message: 'Too many requests from this IP, please try again later.'
 });
 app.use('/api/', limiter);

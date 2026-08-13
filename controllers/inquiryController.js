@@ -15,10 +15,23 @@ const createInquiry = async (req, res) => {
 
 const getInquiries = async (req, res) => {
   try {
-    const inquiries = await Inquiry.find().sort('-createdAt');
+    const { status, page = 1, limit = 50 } = req.query;
+    const query = {};
+    if (status && status !== 'all') {
+      query.status = status;
+    }
+
+    const inquiries = await Inquiry.find(query)
+      .sort('-createdAt')
+      .limit(parseInt(limit, 10))
+      .skip((parseInt(page, 10) - 1) * parseInt(limit, 10));
+
+    const total = await Inquiry.countDocuments(query);
+
     res.json({
       success: true,
       count: inquiries.length,
+      total,
       data: inquiries
     });
   } catch (error) {

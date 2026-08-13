@@ -6,8 +6,9 @@ const {
   updateInquiryStatus,
 } = require('../controllers/inquiryController');
 const { protect, admin } = require('../middleware/authMiddleware');
+const { validateInquiry } = require('../middleware/validatorMiddleware');
 
-router.post('/', createInquiry);
+router.post('/', validateInquiry, createInquiry);
 router.get('/', protect, admin, getInquiries);
 router.put('/:id/status', protect, admin, updateInquiryStatus);
 

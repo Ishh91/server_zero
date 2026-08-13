@@ -67,14 +67,13 @@ exports.getPersonalBranding = async (req, res, next) => {
 };
 
 // @desc    Create personal branding entry
+// @desc    Create personal branding entry
 // @route   POST /api/personal-branding
 // @access  Private (Admin)
 exports.createPersonalBranding = async (req, res, next) => {
+  const filePath = req.file ? req.file.path : null;
+
   try {
-    console.log('Personal branding creation request');
-    console.log('req.body:', req.body);
-    console.log('req.file:', req.file);
-    
     let personalBrandingData;
     if (typeof req.body.data === 'string') {
       personalBrandingData = JSON.parse(req.body.data);
@@ -84,15 +83,11 @@ exports.createPersonalBranding = async (req, res, next) => {
       personalBrandingData = { ...req.body };
     }
     
-    console.log('personalBrandingData:', personalBrandingData);
-    
     if (req.file) {
-      console.log('Uploading avatar to Cloudinary');
       const result = await cloudinary.uploader.upload(req.file.path, {
         folder: 'zero-cineviv/personal-branding',
         transformation: [{ width: 500, height: 500, crop: 'fill' }]
       });
-      fs.unlinkSync(req.file.path);
       personalBrandingData.avatarUrl = result.secure_url;
       personalBrandingData.avatarPublicId = result.public_id;
     }
@@ -105,6 +100,14 @@ exports.createPersonalBranding = async (req, res, next) => {
     });
   } catch (error) {
     next(error);
+  } finally {
+    if (filePath && fs.existsSync(filePath)) {
+      try {
+        fs.unlinkSync(filePath);
+      } catch (unlinkErr) {
+        console.error('Error cleaning up local avatar file:', unlinkErr);
+      }
+    }
   }
 };
 
@@ -112,11 +115,9 @@ exports.createPersonalBranding = async (req, res, next) => {
 // @route   PUT /api/personal-branding/:id
 // @access  Private (Admin)
 exports.updatePersonalBranding = async (req, res, next) => {
+  const filePath = req.file ? req.file.path : null;
+
   try {
-    console.log('Personal branding update request');
-    console.log('req.body:', req.body);
-    console.log('req.file:', req.file);
-    
     const personalBranding = await PersonalBranding.findById(req.params.id);
     if (!personalBranding) {
       return res.status(404).json({
@@ -134,8 +135,6 @@ exports.updatePersonalBranding = async (req, res, next) => {
       updateData = { ...req.body };
     }
     
-    console.log('updateData:', updateData);
-    
     if (req.file) {
       if (personalBranding.avatarPublicId) {
         await cloudinary.uploader.destroy(personalBranding.avatarPublicId);
@@ -145,7 +144,6 @@ exports.updatePersonalBranding = async (req, res, next) => {
         folder: 'zero-cineviv/personal-branding',
         transformation: [{ width: 500, height: 500, crop: 'fill' }]
       });
-      fs.unlinkSync(req.file.path);
       updateData.avatarUrl = result.secure_url;
       updateData.avatarPublicId = result.public_id;
     }
@@ -165,6 +163,14 @@ exports.updatePersonalBranding = async (req, res, next) => {
     });
   } catch (error) {
     next(error);
+  } finally {
+    if (filePath && fs.existsSync(filePath)) {
+      try {
+        fs.unlinkSync(filePath);
+      } catch (unlinkErr) {
+        console.error('Error cleaning up local avatar file:', unlinkErr);
+      }
+    }
   }
 };
 

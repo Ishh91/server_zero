@@ -12,6 +12,7 @@ const {
   getBlogsByCategory,
 } = require('../controllers/blogController');
 const { protect, admin } = require('../middleware/authMiddleware');
+const { validateBlog } = require('../middleware/validatorMiddleware');
 
 // Public routes
 router.get('/', getBlogs);
@@ -21,8 +22,8 @@ router.get('/:slug', getBlogBySlug);
 
 // Admin routes
 router.get('/admin/all', protect, admin, getAdminBlogs);
-router.post('/', protect, admin, createBlog);
-router.put('/:id', protect, admin, updateBlog);
+router.post('/', protect, admin, validateBlog, createBlog);
+router.put('/:id', protect, admin, validateBlog, updateBlog);
 router.delete('/:id', protect, admin, deleteBlog);
 router.get('/admin/:id', protect, admin, getBlogById);
 

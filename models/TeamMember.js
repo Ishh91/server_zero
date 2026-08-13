@@ -43,4 +43,6 @@ const teamMemberSchema = new mongoose.Schema({
   timestamps: true,
 });
 
+teamMemberSchema.index({ isActive: 1, order: 1 });
+
 module.exports = mongoose.model('TeamMember', teamMemberSchema);

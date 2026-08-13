@@ -45,39 +45,46 @@ const createPortfolio = async (req, res) => {
       portfolioData = req.body;
     }
     
-    console.log('Creating portfolio with data:', portfolioData);
-    
     // Handle media upload
     if (req.files) {
       // Handle video upload
-      if (req.files.video) {
+      if (req.files.video && req.files.video[0]) {
         const videoResult = await cloudinary.uploader.upload(req.files.video[0].path, {
           folder: 'zero-cineviv/portfolio',
           resource_type: 'video',
         });
         portfolioData.videoUrl = videoResult.secure_url;
         portfolioData.videoPublicId = videoResult.public_id;
-        fs.unlinkSync(req.files.video[0].path);
       }
       
       // Handle thumbnail upload
-      if (req.files.thumbnail) {
+      if (req.files.thumbnail && req.files.thumbnail[0]) {
         const thumbnailResult = await cloudinary.uploader.upload(req.files.thumbnail[0].path, {
           folder: 'zero-cineviv/portfolio',
           transformation: [{ width: 800, height: 600, crop: 'fill' }]
         });
         portfolioData.thumbnailUrl = thumbnailResult.secure_url;
         portfolioData.thumbnailPublicId = thumbnailResult.public_id;
-        fs.unlinkSync(req.files.thumbnail[0].path);
       }
     }
     
     const portfolio = await Portfolio.create(portfolioData);
-    console.log('Portfolio created:', portfolio);
     res.status(201).json({ success: true, data: portfolio });
   } catch (error) {
     console.error('Portfolio creation error:', error);
-    res.status(400).json({ success: false, message: error.message });
+    res.status(400).json({ success: false, message: error.message || 'Failed to create portfolio item' });
+  } finally {
+    if (req.files) {
+      ['video', 'thumbnail'].forEach(key => {
+        if (req.files[key] && req.files[key][0] && fs.existsSync(req.files[key][0].path)) {
+          try {
+            fs.unlinkSync(req.files[key][0].path);
+          } catch (e) {
+            console.error(`Error deleting temp file ${key}:`, e);
+          }
+        }
+      });
+    }
   }
 };
 
@@ -96,13 +103,10 @@ const updatePortfolio = async (req, res) => {
       updateData = req.body;
     }
     
-    console.log('Updating portfolio with data:', updateData);
-    
     // Handle new media uploads
     if (req.files) {
       // Handle video upload
-      if (req.files.video) {
-        // Delete old video from Cloudinary
+      if (req.files.video && req.files.video[0]) {
         if (portfolio.videoPublicId) {
           await cloudinary.uploader.destroy(portfolio.videoPublicId, { resource_type: 'video' });
         }
@@ -112,12 +116,10 @@ const updatePortfolio = async (req, res) => {
         });
         updateData.videoUrl = videoResult.secure_url;
         updateData.videoPublicId = videoResult.public_id;
-        fs.unlinkSync(req.files.video[0].path);
       }
       
       // Handle thumbnail upload
-      if (req.files.thumbnail) {
-        // Delete old thumbnail from Cloudinary
+      if (req.files.thumbnail && req.files.thumbnail[0]) {
         if (portfolio.thumbnailPublicId) {
           await cloudinary.uploader.destroy(portfolio.thumbnailPublicId);
         }
@@ -127,7 +129,6 @@ const updatePortfolio = async (req, res) => {
         });
         updateData.thumbnailUrl = thumbnailResult.secure_url;
         updateData.thumbnailPublicId = thumbnailResult.public_id;
-        fs.unlinkSync(req.files.thumbnail[0].path);
       }
     }
     
@@ -137,11 +138,22 @@ const updatePortfolio = async (req, res) => {
       { new: true, runValidators: true }
     );
     
-    console.log('Portfolio updated:', updatedPortfolio);
     res.json({ success: true, data: updatedPortfolio });
   } catch (error) {
     console.error('Portfolio update error:', error);
-    res.status(400).json({ success: false, message: error.message });
+    res.status(400).json({ success: false, message: error.message || 'Failed to update portfolio item' });
+  } finally {
+    if (req.files) {
+      ['video', 'thumbnail'].forEach(key => {
+        if (req.files[key] && req.files[key][0] && fs.existsSync(req.files[key][0].path)) {
+          try {
+            fs.unlinkSync(req.files[key][0].path);
+          } catch (e) {
+            console.error(`Error deleting temp file ${key}:`, e);
+          }
+        }
+      });
+    }
   }
 };
 

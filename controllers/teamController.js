@@ -30,30 +30,23 @@ const getTeamMemberById = async (req, res) => {
 };
 
 const createTeamMember = async (req, res) => {
+  const filePath = req.file ? req.file.path : null;
+
   try {
-    console.log('Team member creation request');
-    console.log('req.body:', req.body);
-    console.log('req.file:', req.file);
-    
     let teamMemberData;
     if (typeof req.body.data === 'string') {
       teamMemberData = JSON.parse(req.body.data);
     } else if (req.body.data) {
       teamMemberData = req.body.data;
     } else {
-      // If data is not nested, use the whole body
       teamMemberData = { ...req.body };
     }
     
-    console.log('teamMemberData:', teamMemberData);
-    
     if (req.file) {
-      console.log('Uploading image to Cloudinary');
       const result = await cloudinary.uploader.upload(req.file.path, {
         folder: 'zero-cineviv/team',
         transformation: [{ width: 500, height: 500, crop: 'fill' }]
       });
-      fs.unlinkSync(req.file.path);
       teamMemberData.imageUrl = result.secure_url;
       teamMemberData.imagePublicId = result.public_id;
     }
@@ -62,16 +55,22 @@ const createTeamMember = async (req, res) => {
     res.status(201).json({ success: true, data: teamMember });
   } catch (error) {
     console.error('Team member creation error:', error);
-    res.status(400).json({ success: false, message: error.message, stack: error.stack });
+    res.status(400).json({ success: false, message: error.message || 'Failed to create team member' });
+  } finally {
+    if (filePath && fs.existsSync(filePath)) {
+      try {
+        fs.unlinkSync(filePath);
+      } catch (unlinkErr) {
+        console.error('Error cleaning up local file:', unlinkErr);
+      }
+    }
   }
 };
 
 const updateTeamMember = async (req, res) => {
+  const filePath = req.file ? req.file.path : null;
+
   try {
-    console.log('Team member update request');
-    console.log('req.body:', req.body);
-    console.log('req.file:', req.file);
-    
     const teamMember = await TeamMember.findById(req.params.id);
     if (!teamMember) {
       return res.status(404).json({ success: false, message: 'Team member not found' });
@@ -83,24 +82,18 @@ const updateTeamMember = async (req, res) => {
     } else if (req.body.data) {
       updateData = req.body.data;
     } else {
-      // If data is not nested, use the whole body
       updateData = { ...req.body };
     }
     
-    console.log('updateData:', updateData);
-    
     if (req.file) {
-      // Delete old image from Cloudinary
       if (teamMember.imagePublicId) {
         await cloudinary.uploader.destroy(teamMember.imagePublicId);
       }
       
-      // Upload new image
       const result = await cloudinary.uploader.upload(req.file.path, {
         folder: 'zero-cineviv/team',
         transformation: [{ width: 500, height: 500, crop: 'fill' }]
       });
-      fs.unlinkSync(req.file.path);
       updateData.imageUrl = result.secure_url;
       updateData.imagePublicId = result.public_id;
     }
@@ -114,7 +107,15 @@ const updateTeamMember = async (req, res) => {
     res.json({ success: true, data: updatedMember });
   } catch (error) {
     console.error('Team member update error:', error);
-    res.status(400).json({ success: false, message: error.message, stack: error.stack });
+    res.status(400).json({ success: false, message: error.message || 'Failed to update team member' });
+  } finally {
+    if (filePath && fs.existsSync(filePath)) {
+      try {
+        fs.unlinkSync(filePath);
+      } catch (unlinkErr) {
+        console.error('Error cleaning up local file:', unlinkErr);
+      }
+    }
   }
 };
 
